@@ -1,22 +1,22 @@
 """
 agent.py
-Mouse class: The player in the game. Has a position and a heading.
-Can move one cell at a time and decide on 4 actions per move:
-Move forward, move backward, turn left, turn right (points 8, 15)
+Mouse class: the player in the game, tracking its position and current
+heading. It moves one cell at a time and can decide between 4 actions per
+move: forward, backward, turn left, turn right (requirements #8, #15).
 """
 
-# Clockwise direction order for calculating left/right turns
+# Clockwise direction order, used to compute left/right turns
 CLOCKWISE = ["N", "E", "S", "W"]
 
 
 class Mouse:
     def __init__(self, position, heading: str = "N"):
         self.position = position       # (row, col)
-        self.heading = heading         # The direction the mouse is facing
+        self.heading = heading         # direction the mouse is currently facing
         self.alive = True
         self.moves_count = 0
         self.total_computation_time = 0.0
-        self.path_history = [position]  # Store for rendering/debugging only, not the actual known path
+        self.path_history = [position]  # kept only for render/debug, not a precomputed path
 
     def turn_left(self):
         idx = CLOCKWISE.index(self.heading)
@@ -32,10 +32,11 @@ class Mouse:
 
     def apply_action(self, action: str, maze):
         """
-        Performs 1 movement based on the action decided by the solver
+        Perform one move based on the action decided by the solver.
         action: "FORWARD" | "BACKWARD" | "TURN_LEFT" | "TURN_RIGHT"
-        Turning (TURN_LEFT/TURN_RIGHT) only changes the heading without moving the position
-        Moving (FORWARD/BACKWARD) moves the position by 1 cell according to the condition that there is no wall blocking the way
+        Turning (TURN_LEFT/TURN_RIGHT) only changes heading, not position.
+        Moving (FORWARD/BACKWARD) shifts position by 1 cell, provided there
+        is no wall blocking the way.
         """
         if action == "TURN_LEFT":
             self.turn_left()
@@ -53,7 +54,7 @@ class Mouse:
             raise ValueError(f"Unknown action: {action}")
 
         if not maze.can_move(self.position, direction):
-            # Hit a wall - consider this move as failed but not fatal (just don't move)
+            # Hit a wall -- this move is wasted but the mouse does not die
             return False
 
         from maze_model import Maze

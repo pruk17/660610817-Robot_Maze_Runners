@@ -1,8 +1,10 @@
 """
 solver.py
-FloodFillSolver: จำลอง "กลิ่นชีส" ที่หนูรู้สึกได้ในทุกช่อง (ค่าระยะทางไปชีสของแต่ละช่อง)
-แต่หนูจะตัดสินใจ "การเคลื่อนไหวเดียว" ในแต่ละครั้งเท่านั้น (เลี้ยวซ้าย/ขวา/หน้า/หลัง)
-ไม่มีการเก็บลำดับเส้นทางทั้งหมดไว้ล่วงหน้า (ข้อ 16) -- มีแค่ค่าสนามระยะทางต่อช่อง (เหมือนกลิ่น)
+FloodFillSolver: simulates the "cheese scent" that the mouse can sense in
+every cell (a distance-to-cheese value per cell), but the mouse still only
+decides a single move at a time (turn left/right/forward/backward).
+No full path is precomputed or stored (requirement #16) -- only a
+per-cell distance field (like a scent) is available.
 """
 
 from collections import deque
@@ -13,9 +15,11 @@ from agent import CLOCKWISE
 
 class FloodFillSolver:
     def __init__(self, maze: Maze):
-        # คำนวณ "สนามกลิ่น" (distance field) จาก exit ไปทุกช่องหนึ่งครั้งตอนเริ่มเกม
-        # นี่คือสิ่งที่แทน "หนูได้กลิ่นชีส/รู้ว่าชีสอยู่ตรงไหน" (ข้อ 12)
-        # แต่ไม่ใช่ path สำเร็จรูป หนูยังต้องตัดสินใจเองทีละก้าวจากค่านี้
+        # Compute the "scent field" (distance field) from the exit to every
+        # cell once, at the start of the game. This represents "the mouse
+        # can smell the cheese" (requirement #12), but it is not a
+        # ready-made path -- the mouse still has to decide its own moves
+        # step by step based on this field.
         self.distance_field = self._build_distance_field(maze)
 
     def _build_distance_field(self, maze: Maze):
@@ -36,9 +40,11 @@ class FloodFillSolver:
 
     def decide_next_action(self, mouse, maze: Maze) -> str:
         """
-        ตัดสินใจ action เดียวสำหรับการเคลื่อนไหวครั้งนี้ครั้งเดียวเท่านั้น
-        โดยดูค่าระยะทาง (กลิ่น) ของช่องข้างเคียงที่เดินได้จริง แล้วเลือกทิศที่ใกล้ชีสที่สุด
-        ถ้าทิศนั้นไม่ตรงกับ heading ปัจจุบัน ต้องเลี้ยวก่อน (1 การเคลื่อนไหว = เลี้ยวได้แค่ครั้งเดียว)
+        Decide a single action for this move only. Looks at the distance
+        (scent) value of the walkable neighboring cells and picks the
+        direction closest to the cheese. If that direction doesn't match
+        the current heading, the mouse must turn first (1 move = only one
+        turn at a time).
         """
         r, c = mouse.position
         current_dist = self.distance_field[r][c]
@@ -54,7 +60,7 @@ class FloodFillSolver:
                 best_dir = d
 
         if best_dir is None:
-            # ไม่ควรเกิดขึ้นในเขาวงกตที่เชื่อมกันหมด (ยกเว้นถึงเป้าหมายแล้ว)
+            # Should never happen in a fully connected maze (unless already at the goal)
             return "FORWARD"
 
         if best_dir == mouse.heading:
@@ -62,7 +68,7 @@ class FloodFillSolver:
         if best_dir == mouse.opposite_heading():
             return "BACKWARD"
 
-        # ต้องเลี้ยว -- เลือกว่าจะซ้ายหรือขวา (เลี้ยวได้ทีละ 1 ครั้งต่อ 1 การเคลื่อนไหว)
+        # Needs to turn -- decide left or right (only one turn per move)
         idx_current = CLOCKWISE.index(mouse.heading)
         idx_target = CLOCKWISE.index(best_dir)
         diff = (idx_target - idx_current) % 4
