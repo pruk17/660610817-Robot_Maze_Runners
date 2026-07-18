@@ -10,5 +10,7 @@ if __name__ == "__main__":
         size=30,
         cell_size_cm=16,
         seed=None,          # Set a number if you want to generate the same maze every time, e.g., seed=42
+        solver="displacement",  # "displacement" = straight-line smell (no precomputation)
+                                 # "scent"        = flood-fill distance field (shortest path)
     )
     game.run()

@@ -30,8 +30,13 @@ game = GameEngine(
     size=30,           # ขนาดเขาวงกต (จำนวนช่องต่อด้าน)
     cell_size_cm=16,    # ขนาดจริงของแต่ละช่อง (ซม.) ใช้คำนวณสเกลจริงเท่านั้น
     seed=None,          # ใส่เลข เช่น seed=42 ถ้าอยากได้เขาวงกตเดิมซ้ำทุกครั้ง
+    solver="displacement",  # เลือกสมองหนู: "displacement" หรือ "scent" (ดูคำอธิบายด้านล่าง)
 )
 ```
+
+โหมดสมองหนู (solver) มี 2 แบบ:
+- `"displacement"` (ค่าเริ่มต้น) — อัลกอริทึม **LRTA\*** (Learning Real-Time A\*, Korf 1990): หนูรับรู้แค่**การกระจัดเส้นตรง**ไปหาชีส (ตรงกับเส้นประสีแดงบนจอ) เป็นความเชื่อตั้งต้น แล้ว**เรียนรู้**แก้ความเชื่อระหว่างเดิน — ทางตันที่ "กลิ่นเหมือนใกล้" จะถูกปรับค่าให้แพงขึ้นทุกครั้งที่หลงเข้าไป จนหมดแรงดึงดูดไปเอง ไม่มีการคำนวณล่วงหน้าใดๆ ถึงชีสได้เสมอแต่ไม่การันตีเส้นทางสั้นสุด
+- `"scent"` — กลิ่นชีสแผ่ตามทางเดิน (flood fill คำนวณครั้งเดียวตอนเริ่ม) หนูเดินตาม gradient — การันตี shortest path
 
 ## โครงสร้างไฟล์
 
@@ -46,6 +51,7 @@ Mouse_Maze/
 ├── renderer_pygame.py        # แสดงผลกราฟิก real-time (กำแพง, หนู, ชีส, เส้นประ, HUD)
 ├── generate_maze.py            # สคริปต์แยก: generate + export เขาวงกตเป็นภาพ/ข้อความ
 ├── maze_visualizer.py           # ตัวช่วยของ generate_maze.py (matplotlib + text)
+├── test_sim.py                   # ทดสอบแบบไม่เปิดจอ: รัน solver ทั้งสองกับ maze 10 ชุด
 └── maze.png                      # ตัวอย่างภาพเขาวงกตที่ export ไว้
 ```
 
@@ -56,7 +62,7 @@ Mouse_Maze/
 | [maze_model.py](maze_model.py) | นิยาม `Cell` (กำแพง 4 ด้าน) และ `Maze` (กระดาน + จุดเริ่ม/จุดจบ) |
 | [maze_generator.py](maze_generator.py) | เจาะทางเดินด้วย DFS สุ่ม (Recursive Backtracking) แล้วใช้ BFS ตรวจสอบว่า shortest path ≥ 5 ก้าว |
 | [agent.py](agent.py) | คลาส `Mouse` เก็บตำแหน่ง/ทิศทาง และรับ action ทีละ 1 อย่าง (`FORWARD`/`BACKWARD`/`TURN_LEFT`/`TURN_RIGHT`) |
-| [solver.py](solver.py) | คลาส `FloodFillSolver` คำนวณระยะทางจากทุกช่องไปยังชีส (BFS ครั้งเดียวตอนเริ่ม) แล้วบอกหนูว่าควรทำ action อะไรในแต่ละก้าว |
+| [solver.py](solver.py) | สมองหนู 2 แบบ: `FloodFillSolver` (กลิ่นแบบสนามระยะทาง — shortest path) และ `LRTASolver` (LRTA\* จากการกระจัดเส้นตรง — ไม่มี precomputation) ทั้งคู่รับข้อมูลผ่าน observation dict เท่านั้น ไม่เคยเห็นผังเขาวงกต |
 | [renderer_pygame.py](renderer_pygame.py) | วาดเขาวงกต, หนู, ชีส, เส้นประระยะกระจัด, และ HUD แสดงสถานะ |
 | [generate_maze.py](generate_maze.py) | สคริปต์เดี่ยวๆ ไว้สร้างเขาวงกตแล้ว export เป็นภาพ (`maze.png`) กับ text — ไม่เกี่ยวกับตัวเกม |
 | [maze_visualizer.py](maze_visualizer.py) | ตัวช่วยวาดของ `generate_maze.py` (ASCII text + matplotlib PNG ตามสเกลจริง) |
